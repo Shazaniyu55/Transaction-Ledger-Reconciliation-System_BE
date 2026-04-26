@@ -6,7 +6,10 @@ dotenv.config();
 
  const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }  // required for Supabase
+  ssl: { rejectUnauthorized: false },
+  max: 1,              // important for serverless
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000, // required for Supabase
 });
 
 // Create a typed connection pool

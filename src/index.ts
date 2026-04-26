@@ -8,6 +8,7 @@ import morgan from "morgan";
 
 const app = express();
 const port = 3001;
+app.set('trust proxy', 1); 
 
 app.use(helmet());
 app.use(express.json());
