@@ -16,8 +16,8 @@ export default class Logger {
     ),
     transports: [
       // Console-only transport (serverless friendly)
-      //new transports.Console(),
-      new transports.File({ filename: "logs/combined.log" }),
+      new transports.Console(),
+      //new transports.File({ filename: "logs/combined.log" }),
     ],
   });
 
