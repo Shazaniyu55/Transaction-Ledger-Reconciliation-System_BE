@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const pool = new Pool({
+ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }  // required for Supabase
 });
@@ -32,4 +32,4 @@ export const pool = new Pool({
 // })();
 
 // // Export the pool for usage in other files
-// export default pool;
+export default pool;
