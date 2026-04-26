@@ -4,7 +4,10 @@ import { reconcileController } from '../controller/reconcile.controller';
 import { errorHandler } from '../utils/errorHandle';
 const ReconcileRouter = Router();
 
-const upload = multer({ dest: 'uploads/' }); // saves files to /uploads temp
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max
+});
 
 ReconcileRouter.post(
   '/reconcile',
