@@ -1,8 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { runReconciliation } from '../service/reconcile.service';
-import { successResponse } from '../utils/successresponse';
-import HttpException from '../utils/httpExceptions';
-import statusCodes from '../constants/statuscodes';
 
 export async function reconcileController(
   req: Request,
@@ -15,17 +12,19 @@ export async function reconcileController(
     };
 
     if (!files?.fileA || !files?.fileB) {
-      return res.status(statusCodes.BAD_REQUEST).json({ error: 'Both fileA and fileB are required' });
+      return res.status(400).json({ 
+        error: 'Both fileA and fileB are required' 
+      });
     }
 
-    const fileAPath = files.fileA[0].path;
-    const fileBPath = files.fileB[0].path;
+    // .buffer instead of .path — memoryStorage puts file here
+    const bufferA = files.fileA[0].buffer;
+    const bufferB = files.fileB[0].buffer;
 
-    const result = await runReconciliation(fileAPath, fileBPath);
-    console.log('Reconciliation result:', result);
-    return res.status(statusCodes.CREATED).json(result);
+    const result = await runReconciliation(bufferA, bufferB);
+    return res.status(200).json(result);
+
   } catch (err) {
-    console.error('Error in reconcileController:', err);
-    next(new HttpException(statusCodes.INTERNAL_SERVER_ERROR, 'Internal server error'));
+    next(err);
   }
 }

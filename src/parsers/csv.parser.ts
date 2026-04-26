@@ -1,39 +1,38 @@
-import fs from 'fs';
+import { Readable } from 'stream';
 import csvParser from 'csv-parser';
 import { Transaction } from '../types';
 
-export function buildHashMap(
-  filePath: string
+export function buildHashMapFromBuffer(
+  buffer: Buffer
 ): Promise<Map<string, Transaction>> {
   return new Promise((resolve, reject) => {
     const map = new Map<string, Transaction>();
 
-    fs.createReadStream(filePath)
+    Readable.from(buffer)
       .pipe(csvParser())
       .on('data', (row: Transaction) => {
-        map.set(row.transactionId, row); // O(1) insert
+        map.set(row.transactionId, row);
       })
       .on('end', () => resolve(map))
       .on('error', reject);
   });
 }
 
-export function compareWithHashMap(
-  filePath: string,
+export function compareBufferWithHashMap(
+  buffer: Buffer,
   mapA: Map<string, Transaction>
 ): Promise<{ discrepancies: any[]; totalB: number }> {
   return new Promise((resolve, reject) => {
     const discrepancies: any[] = [];
     let totalB = 0;
 
-    fs.createReadStream(filePath)
+    Readable.from(buffer)
       .pipe(csvParser())
       .on('data', (rowB: Transaction) => {
         totalB++;
         const rowA = mapA.get(rowB.transactionId);
 
         if (!rowA) {
-          // In B but not in A
           discrepancies.push({
             transactionId: rowB.transactionId,
             type: 'MISSING_IN_A',
@@ -41,7 +40,6 @@ export function compareWithHashMap(
           return;
         }
 
-        // Amount mismatch
         if (rowA.amount !== rowB.amount) {
           discrepancies.push({
             transactionId: rowB.transactionId,
@@ -51,7 +49,6 @@ export function compareWithHashMap(
           });
         }
 
-        // Status mismatch
         if (rowA.status !== rowB.status) {
           discrepancies.push({
             transactionId: rowB.transactionId,
@@ -61,11 +58,9 @@ export function compareWithHashMap(
           });
         }
 
-        // Mark as seen so we can detect MISSING_IN_B after
         mapA.delete(rowB.transactionId);
       })
       .on('end', () => {
-        // Whatever remains in mapA was never matched → missing in B
         for (const [txnId] of mapA) {
           discrepancies.push({
             transactionId: txnId,

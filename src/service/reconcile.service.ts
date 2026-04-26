@@ -1,35 +1,23 @@
-import { buildHashMap, compareWithHashMap } from '../parsers/csv.parser';
+import { buildHashMapFromBuffer, compareBufferWithHashMap } from '../parsers/csv.parser';
 import { createRun, saveDiscrepancies } from '../config/queries';
-import fs from 'fs';
 
 export async function runReconciliation(
-  fileAPath: string,
-  fileBPath: string
+  bufferA: Buffer,
+  bufferB: Buffer
 ): Promise<any> {
-  try {
-    // Step 1: Stream file A into a HashMap
-    const mapA = await buildHashMap(fileAPath);
-    const totalA = mapA.size;
+  const mapA = await buildHashMapFromBuffer(bufferA);
+  const totalA = mapA.size;
 
-    // Step 2: Stream file B, compare row by row
-    const { discrepancies, totalB } = await compareWithHashMap(fileBPath, mapA);
+  const { discrepancies, totalB } = await compareBufferWithHashMap(bufferB, mapA);
 
-    // Step 3: Save run to DB
-    const runId = await createRun(totalA, totalB);
+  const runId = await createRun(totalA, totalB);
+  await saveDiscrepancies(runId, discrepancies);
 
-    // Step 4: Bulk save discrepancies
-    await saveDiscrepancies(runId, discrepancies);
-
-    return {
-      runId,
-      totalA,
-      totalB,
-      discrepancyCount: discrepancies.length,
-      discrepancies: discrepancies.slice(0, 100), // first page inline
-    };
-  } finally {
-    // Always clean up temp files
-    fs.unlink(fileAPath, () => {});
-    fs.unlink(fileBPath, () => {});
-  }
+  return {
+    runId,
+    totalA,
+    totalB,
+    discrepancyCount: discrepancies.length,
+    discrepancies: discrepancies.slice(0, 100),
+  };
 }
